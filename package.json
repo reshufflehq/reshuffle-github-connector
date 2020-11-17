@@ -1,0 +1,43 @@
+{
+  "name": "reshuffle-connectorname-connector",
+  "version": "0.0.1",
+  "description": "A Reshuffle _CONNECTOR_NAME_ connector",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "rimraf dist && tsc",
+    "build:watch": "rimraf dist && tsc -w",
+    "lint": "eslint . --ext .ts,.js --fix",
+    "prepublishOnly": "rimraf dist && tsc",
+    "prepare": "rimraf dist && tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reshufflehq/reshuffle-_CONNECTOR_NAME_-connector.git"
+  },
+  "keywords": [
+    "Reshuffle",
+    "integrations",
+    "workflows"
+  ],
+  "author": "Reshuffle",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/reshufflehq/reshuffle-_CONNECTOR_NAME_-connector/issues"
+  },
+  "homepage": "https://github.com/reshufflehq/reshuffle-_CONNECTOR_NAME_-connector#readme",
+  "dependencies": {
+    "reshuffle-base-connector": "^0.0.11"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^3.10.1",
+    "@typescript-eslint/parser": "^3.10.1",
+    "eslint": "^7.7.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "prettier": "^2.1.1",
+    "rimraf": "^3.0.2",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.2"
+  }
+}
