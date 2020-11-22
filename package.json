@@ -1,7 +1,7 @@
 {
-  "name": "reshuffle-connectorname-connector",
+  "name": "reshuffle-github-connector",
   "version": "0.0.1",
-  "description": "A Reshuffle _CONNECTOR_NAME_ connector",
+  "description": "A Reshuffle GitHub connector",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/reshufflehq/reshuffle-_CONNECTOR_NAME_-connector.git"
+    "url": "git+https://github.com/reshufflehq/reshuffle-github-connector.git"
   },
   "keywords": [
     "Reshuffle",
@@ -23,10 +23,12 @@
   "author": "Reshuffle",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/reshufflehq/reshuffle-_CONNECTOR_NAME_-connector/issues"
+    "url": "https://github.com/reshufflehq/reshuffle-github-connector/issues"
   },
-  "homepage": "https://github.com/reshufflehq/reshuffle-_CONNECTOR_NAME_-connector#readme",
+  "homepage": "https://github.com/reshufflehq/reshuffle-github-connector#readme",
   "dependencies": {
+    "@octokit/rest": "^18.0.9",
+    "@octokit/webhooks": "^7.15.1",
     "reshuffle-base-connector": "^0.0.11"
   },
   "devDependencies": {
