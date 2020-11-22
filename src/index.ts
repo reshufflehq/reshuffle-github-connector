@@ -129,6 +129,7 @@ export default class GitHubConnector extends BaseHttpConnector<
             config.content_type === webhookOptions.config.content_type &&
             config.insecure_ssl === webhookOptions.config.insecure_ssl
           ) {
+            if (!githubEvents) return events.includes('push')
             const eventsNotRegistered = githubEvents.filter(
               (ev: WebhookEvents) => !events.includes(ev),
             )
