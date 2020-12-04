@@ -8,7 +8,7 @@ const DEFAULT_WEBHOOK_PATH = '/reshuffle-github-connector/webhook'
 type OctokitOptions = NonNullable<ConstructorParameters<typeof Octokit>[0]>
 
 // From: https://developer.github.com/webhooks/event-payloads/#webhook-event-payloads
-export type WebhookEvents =
+export type GithubEvent =
   | 'check_run'
   | 'check_suite'
   | 'commit_comment'
@@ -67,7 +67,7 @@ export interface GitHubConnectorConfigOptions extends OctokitOptions {
 export interface GitHubConnectorEventOptions {
   owner: string
   repo: string
-  githubEvents?: WebhookEvents[]
+  githubEvent: GithubEvent
 }
 
 function validateBaseURL(url?: string): string {
@@ -87,12 +87,11 @@ export default class GitHubConnector extends BaseHttpConnector<
 > {
   // Your class variables
   private _sdk: Octokit
-  private _webhook?: RestEndpointMethodTypes['repos']['createWebhook']['response']['data']
 
   constructor(app: Reshuffle, options: GitHubConnectorConfigOptions, id?: string) {
     super(app, options, id)
     this._sdk = new Octokit({
-      auth: options?.token ? `token ${options.token}` : undefined,
+      auth: options?.token && `token ${options.token}`,
     })
   }
 
@@ -102,49 +101,62 @@ export default class GitHubConnector extends BaseHttpConnector<
 
     if (events.length) {
       const baseUrl = validateBaseURL(this.configOptions?.runtimeBaseUrl)
+      const githubEvents = events.reduce<Record<string, GithubEvent[]>>(
+        (acc, { options: { owner, repo, githubEvent } }) => {
+          const repoEvents = acc[`${owner}/${repo}`] || []
+          return {
+            ...acc,
+            [`${owner}/${repo}`]: [...repoEvents, githubEvent],
+          }
+        },
+        {},
+      )
 
-      for (const event of events) {
-        const { githubEvents } = event.options
+      for (const [key, events] of Object.entries(githubEvents)) {
+        const [owner, repo] = key.split('/')
 
         const webhookOptions: RestEndpointMethodTypes['repos']['createWebhook']['parameters'] = {
-          events: githubEvents,
-          repo: event.options.repo,
+          events,
+          repo,
           config: {
             url: baseUrl + (this.configOptions?.webhookPath || DEFAULT_WEBHOOK_PATH),
             secret: this.configOptions.secret,
             insecure_ssl: '0',
             content_type: 'json',
           },
-          owner: event.options.owner,
+          owner,
         }
 
         const webhooks = await this._sdk.repos.listWebhooks({
-          owner: event.options.owner,
-          repo: event.options.repo,
+          owner,
+          repo,
         })
 
-        const existingWebhook = webhooks.data.find(({ events, config }) => {
-          if (
-            config.url === webhookOptions.config.url &&
-            config.content_type === webhookOptions.config.content_type &&
-            config.insecure_ssl === webhookOptions.config.insecure_ssl
-          ) {
-            if (!githubEvents) return events.includes('push')
-            const eventsNotRegistered = githubEvents.filter(
-              (ev: WebhookEvents) => !events.includes(ev),
-            )
-            return eventsNotRegistered.length === 0
-          }
+        const existingWebhook = webhooks.data.find(
+          ({ events: existingEvents, config: existingConfig }) => {
+            if (
+              existingConfig.url === webhookOptions.config.url &&
+              existingConfig.content_type === webhookOptions.config.content_type &&
+              existingConfig.insecure_ssl === webhookOptions.config.insecure_ssl
+            ) {
+              const eventsNotRegistered = events?.filter((ev) => !existingEvents.includes(ev))
+              return eventsNotRegistered?.length === 0
+            }
 
-          return false
-        })
-
-        this._webhook =
-          existingWebhook || (await this._sdk.repos.createWebhook(webhookOptions)).data
-
-        logger.info(
-          `Reshuffle GitHub - webhook registered successfully (name: ${this._webhook.name}, url: ${this._webhook.url})`,
+            return false
+          },
         )
+
+        if (existingWebhook) {
+          logger.info(
+            `Reshuffle GitHub - existing webhook reused (name: ${existingWebhook.name}, url: ${existingWebhook.url})`,
+          )
+        } else {
+          const webhook = (await this._sdk.repos.createWebhook(webhookOptions)).data
+          logger.info(
+            `Reshuffle GitHub - webhook registered successfully (name: ${webhook.name}, url: ${webhook.url})`,
+          )
+        }
       }
     }
   }
@@ -152,13 +164,14 @@ export default class GitHubConnector extends BaseHttpConnector<
   // Your events
   on(
     options: GitHubConnectorEventOptions,
-    handler: (event: EventConfiguration & Record<string, any>) => void,
+    handler: (event: EventConfiguration & Record<string, any>, app: Reshuffle) => void,
     eventId: string,
   ): EventConfiguration {
+    options.githubEvent = options.githubEvent || 'push'
     const path = this.configOptions?.webhookPath || DEFAULT_WEBHOOK_PATH
 
     if (!eventId) {
-      eventId = `Github${path}/${options.githubEvents}/${this.id}`
+      eventId = `Github${path}/${options.githubEvent}/${this.id}`
     }
     const event = new EventConfiguration(eventId, this, options)
     this.eventConfigurations[event.id] = event
@@ -170,18 +183,10 @@ export default class GitHubConnector extends BaseHttpConnector<
   }
 
   async handle(req: Request, res: Response): Promise<boolean> {
-    const githubEvent = req.body.action
-    if (!githubEvent) return true
+    const incomingGithubEvent = req.headers['x-github-event'] as GithubEvent
     const githubRepo = req.body.repository.name
     const githubOwner = req.body.repository.owner.login
     const logger = this.app.getLogger()
-    const eventsUsingGithubEvent = Object.values(this.eventConfigurations).filter(
-      ({ options }) =>
-        (options.repo === githubRepo &&
-          options.owner === githubOwner &&
-          options.githubEvents.includes('*')) ||
-        options.githubEvents.includes(githubEvent),
-    )
 
     if (this.configOptions.secret) {
       const signature = (req.headers['x-hub-signature-256'] ||
@@ -193,6 +198,13 @@ export default class GitHubConnector extends BaseHttpConnector<
         return false
       }
     }
+
+    const eventsUsingGithubEvent = Object.values(this.eventConfigurations).filter(
+      (event: EventConfiguration) => {
+        const { repo, owner, githubEvent } = event.options as GitHubConnectorEventOptions
+        return repo === githubRepo && owner === githubOwner && githubEvent === incomingGithubEvent
+      },
+    )
 
     for (const event of eventsUsingGithubEvent) {
       await this.app.handleEvent(event.id, {
