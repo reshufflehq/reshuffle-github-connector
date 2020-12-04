@@ -24,14 +24,24 @@ const connector = new GitHubConnector(app, {
   repo: process.env.REPO,
 })
 
-connector.on({ githubEvent: '*' }, (event) => {
+connector.on({ githubEvent: 'push' }, (event) => {
   console.log('GitHub Event: ', event)
 })
 
 app.start()
 ```
 
-Create an API token from your GitHub account:
+### Table of Contents
+
+[Create GitHub API token](#apitoken)
+
+[Configuration Options](#configuration-options)
+
+[Connector Events](#connector-events)
+
+[Connector Actions](#connector-actions)
+
+<a name="apitoken"></a>Create an API token from your GitHub account:
 
 1. Log in and go to https://github.com/settings/tokens.
 2. Click "Generate new token".
@@ -39,7 +49,7 @@ Create an API token from your GitHub account:
 
 #### Configuration Options:
 
-Provide options as below for connecting to Jira:
+Provide options as below for connecting to GitHub:
 
 ```typescript
 const connector = new GitHubConnector(app, {
@@ -52,12 +62,12 @@ To use GitHub connector events, you need to provide at least your runtime baseUR
 You can also override the default webhookPath and webhookName.
 
 ```typescript
-interface GithubConnectorConfigOptions {
+interface GithubConnectorConfigOptions extends OctokitOptions {
   owner: string
   repo: string
   secret?: string
   webhookPath?: string
-  baseUrl?: string
+  runtimeBaseUrl?: string
   token?: string
 }
 
@@ -88,11 +98,11 @@ To listen to events happening in GitHub, pass the GitHub event type as options
 
 ```typescript
 interface GitHubConnectorEventOptions {
-  githubAction?: WebhookEvents | WebhookEvents[]
+  githubEvent?: GithubEvent
 }
 
 // From: https://developer.github.com/webhooks/event-payloads/#webhook-event-payloads
-type WebhookEvents =
+type GithubEvent =
   | 'check_run'
   | 'check_suite'
   | 'commit_comment'
@@ -140,6 +150,26 @@ type WebhookEvents =
   | 'team'
   | 'team_add'
   | 'watch'
+```
+
+##### Examples of event listeners:
+
+```typescript
+const app = new Reshuffle()
+const connector = new GithubConnector(app, {
+  token: process.env.TOKEN,
+  owner: process.env.OWNER,
+  baseUrl: process.env.BASE_URL,
+  repo: process.env.REPO,
+})
+
+connector.on({ githubEvent: 'issues' }, async (event, app) => {
+  console.log(event)
+})
+
+connector.on({ githubEvent: 'fork' }, async (event, app) => {
+  console.log(event)
+})
 ```
 
 #### Connector actions
