@@ -1,52 +1,222 @@
-## BEGIN - TO DELETE TILL END
+# reshuffle-github-connector
 
-THIS IS A TEMPLATE REPO FOR NEW RESHUFFLE CONNECTORS
-1. Create a new connector repo from this template using this link https://github.com/reshufflehq/reshuffle-template-connector/generate
-2. Clone the repo locally
-3. Rename all occurrences of _CONNECTOR_NAME_
-4. `npm install`
-5. `npm run build:watch`
-6. Implement your events/actions in `src/index.ts`
-7. `npm run lint`
-8. Push your code
-9. Go to https://app.circleci.com/projects/project-dashboard/github/reshufflehq/
-    a. You should see your new connector repo
-    b. click on `Set Up Project` for the repo
-    c. click on `Use Existing Config`
-    d. click on `Start Building`
+[Code](https://github.com/reshufflehq/reshuffle-github-connector) | [npm](https://www.npmjs.com/package/reshuffle-github-connector) | [Code sample](https://github.com/reshufflehq/reshuffle/tree/master/examples/github)
 
-10. If circle CI checks are all green, you are all set!
+`npm install reshuffle-github-connector`
 
-// Keep documentation template below
+This connector uses the [Octokit GitHub REST API](https://github.com/octokit/rest.js) package.
 
-## END
+### Reshuffle GitHub Connector
 
-# reshuffle-_CONNECTOR_NAME_-connector
+This connector provides a connector for [GitHub](https://www.github.com).
 
-### Reshuffle _CONNECTOR_NAME_ Connector
+The following example listens to all GitHub events on a repository:
 
-This connector provides <description>.
+```js
+const { Reshuffle } = require('reshuffle')
+const { GitHubConnector } = require('reshuffle-github-connector')
+
+const app = new Reshuffle()
+const connector = new GitHubConnector(app, {
+  token: process.env.TOKEN,
+  runtimeBaseUrl: process.env.RUNTIME_BASE_URL
+})
+
+connector.on({ githubEvent: 'push' }, (event) => {
+  console.log('GitHub Event: ', event)
+})
+
+app.start()
+```
+
+### Table of Contents
+
+[Create GitHub API token](#apitoken)
+
+[Configuration Options](#configuration-options)
+
+[Connector Events](#connector-events)
+
+[Connector Actions](#connector-actions)
+
+<a name="apitoken"></a>Create an API token from your GitHub account:
+
+1. Log in and go to https://github.com/settings/tokens.
+2. Click "Generate new token".
+3. Click Copy to clipboard, then paste the token to your script, or elsewhere to save
 
 #### Configuration Options:
+
+Provide options as below for connecting to GitHub:
+
 ```typescript
-interface _CONNECTOR_NAME_ConnectorConfigOptions {
-  foo: string // foo description
-  bar?: number // bar description
+const connector = new GitHubConnector(app, {
+  token: process.env.TOKEN,
+  runtimeBaseUrl: process.env.RUNTIME_BASE_URL
+})
+```
+
+To use GitHub connector events, you need to provide at least your runtimeBaseUrl.
+You can also override the default webhookPath and webhookName.
+
+```typescript
+interface GithubConnectorConfigOptions extends OctokitOptions {
+  secret?: string
+  webhookPath?: string
+  runtimeBaseUrl?: string
+  token?: string
+}
+
+// Full list of available options to connect to Octokit GitHub Rest API
+type OctokitOptions = {
+  authStrategy?: any
+  auth?: any
+  userAgent?: string
+  previews?: string[]
+  baseUrl?: string
+  log?: {
+    debug: (message: string) => unknown
+    info: (message: string) => unknown
+    warn: (message: string) => unknown
+    error: (message: string) => unknown
+  }
+  request?: OctokitTypes.RequestRequestOptions
+  timeZone?: string
+  [option: string]: any
 }
 ```
 
 #### Connector events
 
-##### event1 description
-The connector fires this event when ...
+##### listening to GitHub events
 
-##### event2 description
-The connector fires this event when ...
+To listen to events happening in GitHub, pass the GitHub event type as options
+
+```typescript
+interface GitHubConnectorEventOptions {
+  owner: process.env.OWNER,
+  repo: process.env.REPO,
+  githubEvent: GithubEvent
+}
+
+// From: https://developer.github.com/webhooks/event-payloads/#webhook-event-payloads
+type GithubEvent =
+  | 'check_run'
+  | 'check_suite'
+  | 'commit_comment'
+  | 'content_reference'
+  | 'create'
+  | 'delete'
+  | 'deploy_key'
+  | 'deployment'
+  | 'deployment_status'
+  | 'fork'
+  | 'github_app_authorization'
+  | 'gollum'
+  | 'installation'
+  | 'installation_repositories'
+  | 'issue_comment'
+  | 'issues'
+  | 'label'
+  | 'marketplace_purchase'
+  | 'member'
+  | 'membership'
+  | 'meta'
+  | 'milestone'
+  | 'organization'
+  | 'org_block'
+  | 'package'
+  | 'page_build'
+  | 'ping'
+  | 'project_card'
+  | 'project_column'
+  | 'project'
+  | 'public'
+  | 'pull_request'
+  | 'pull_request_review'
+  | 'pull_request_review_comment'
+  | 'push'
+  | 'release'
+  | 'repository_dispatch'
+  | 'repository'
+  | 'repository_import'
+  | 'repository_vulnerability_alert'
+  | 'security_advisory'
+  | 'sponsorship'
+  | 'star'
+  | 'status'
+  | 'team'
+  | 'team_add'
+  | 'watch'
+```
+
+##### Examples of event listeners:
+
+```typescript
+const app = new Reshuffle()
+const connector = new GitHubConnector(app, {
+  token: process.env.TOKEN,
+  runtimeBaseUrl: process.env.RUNTIME_BASE_URL
+})
+
+connector.on({ 
+    owner: process.env.OWNER,
+    repo: process.env.REPO,
+    githubEvent: 'issues' 
+  }, async (event, app) => {
+  console.log(event)
+})
+
+connector.on({ 
+    owner: process.env.OWNER,
+    repo: process.env.REPO,
+    githubEvent: 'fork' 
+  }, async (event, app) => {
+  console.log(event)
+})
+```
 
 #### Connector actions
 
-##### action1
-The connector provides action1 which ...
+All actions are provided via the sdk.
+// See full list of actions with documentation [Octokit GitHub Rest.js Documentation](https://octokit.github.io/rest.js/v18)
 
-##### action2
-The connector provides action2 which ...
+Few examples:
+
+- Get the issues for a repository
+
+```typescript
+const repoIssues = await connector.sdk().issues.get({
+  owner,
+  repo,
+  issue_number,
+})
+```
+
+- Create a pull request
+
+```typescript
+const pullRequest = await connector.sdk().pulls.create({
+  owner,
+  repo,
+  title,
+  head,
+  base,
+})
+```
+
+- Follow another user:
+
+```typescript
+const user = await connector.sdk().users.follow({
+  username,
+})
+```
+
+##### sdk
+
+Full access to the Octokit GitHub Rest Client
+
+```typescript
+const sdk = await connector.sdk()
+```
