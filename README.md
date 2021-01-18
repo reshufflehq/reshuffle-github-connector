@@ -4,11 +4,12 @@
 
 `npm install reshuffle-github-connector`
 
+
 This connector uses the [Octokit GitHub REST API](https://github.com/octokit/rest.js) package.
 
 ### Reshuffle GitHub Connector
 
-This connector provides a connector for [GitHub](https://www.github.com).
+This package contains a [Reshuffle](https://reshuffle.com) connector to connect to [GitHub](https://www.github.com).
 
 The following example listens to all GitHub events on a repository:
 
