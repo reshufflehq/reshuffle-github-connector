@@ -9,7 +9,7 @@ This connector uses the [Octokit GitHub REST API](https://github.com/octokit/res
 
 ### Reshuffle GitHub Connector
 
-This package contains a [Reshuffle](https://reshuffle.com) connector to connect to [GitHub](https://www.github.com).
+This package contains a [Reshuffle](https://github.com/reshufflehq/reshuffle) connector to connect to [GitHub](https://www.github.com).
 
 The following example listens to all GitHub events on a repository:
 
