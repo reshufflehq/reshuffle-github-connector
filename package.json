@@ -1,6 +1,6 @@
 {
   "name": "reshuffle-github-connector",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A Reshuffle GitHub connector",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
