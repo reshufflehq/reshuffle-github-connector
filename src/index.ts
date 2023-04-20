@@ -62,6 +62,7 @@ export interface GitHubConnectorConfigOptions extends OctokitOptions {
   webhookPath?: string
   runtimeBaseUrl?: string
   token?: string
+  baseUrl?: string,
 }
 
 export interface GitHubConnectorEventOptions {
@@ -92,6 +93,7 @@ export default class GitHubConnector extends BaseHttpConnector<
     super(app, options, id)
     this._sdk = new Octokit({
       auth: options?.token && `token ${options.token}`,
+      baseUrl: options?.baseUrl,
     })
   }
 
