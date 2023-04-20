@@ -62,7 +62,7 @@ export interface GitHubConnectorConfigOptions extends OctokitOptions {
   webhookPath?: string
   runtimeBaseUrl?: string
   token?: string
-  baseUrl?: string,
+  baseUrl?: string
 }
 
 export interface GitHubConnectorEventOptions {
